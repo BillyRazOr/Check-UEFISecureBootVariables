@@ -278,6 +278,38 @@ try {
     Break # No need to continue with remaining DBX-related checks of script if failed to obtain DBX data
 }
 
+Import-Module -Force "$PSScriptRoot\Get-SVNfromDBX.psm1"
+
+$dbx_list = $dbx_raw | Get-UEFIDatabaseSignatures
+$dbx_size = $dbx_raw.Bytes.Length
+$dbx_hashes = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_SHA256_GUID' } | ForEach-Object { $_.SignatureList.SignatureData }).Count
+$dbx_certs = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_X509_GUID' } | ForEach-Object { $_.SignatureList.SignatureData }).Count
+$dbx_svns = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_SHA256_GUID' } | ForEach-Object { $_.SignatureList | Where-Object { $_.SignatureOwner -eq [guid]$SVN_OWNER_GUID } } | ForEach-Object { $_.SignatureData }).Count
+$dbx_hashes -= $dbx_svns
+
+function Show-UEFICerts {
+    param (
+        [Parameter(Mandatory)]
+        [PSCustomObject]$UEFISignatureDatabase
+    )
+    $cert_names = [ordered]@{}
+    foreach ($SignatureList in $UEFISignatureDatabase) {
+        if ($SignatureList.SignatureType -eq 'EFI_CERT_X509_GUID') {
+            foreach ($Signature in $SignatureList.SignatureList) {
+                $common_name = [regex]::Match($Signature.SignatureData.Subject, 'CN=([^,]+)').Groups[1].Value
+                if ([string]::IsNullOrWhiteSpace($common_name)) {
+                    $common_name = $Signature.SignatureData.Thumbprint # Show Thumbprint if cert has no CN
+                }
+                $cert_names[$Signature.SignatureData.Thumbprint] = $common_name
+            }
+        }
+    }
+    foreach ($Key in $cert_names.Keys) {
+        Write-Host "$check $($cert_names[$Key])"
+    }
+}
+Show-UEFICerts -UEFISignatureDatabase $dbx_list
+
 $colWidth = 27
 function Show-CheckDBX {
     param(
@@ -316,19 +348,10 @@ if ($arch -eq "amd64") {
 }
 # Show-CheckDBX "Current Windows staged" "C:\Windows\System32\SecureBootUpdates\dbxupdate.bin"
 
-Import-Module -Force "$PSScriptRoot\Get-SVNfromDBX.psm1"
-
 $svn_json = Get-Content -Path "$PSScriptRoot\..\dbx_info\dbx_info_msft_latest.json" -Raw | ConvertFrom-Json
 $svn_bootmgr_latest = [version]($svn_json.svns | Where-Object { $_.guid -eq "{$EFI_BOOTMGR_DBXSVN_GUID} == EFI_BOOTMGR_DBXSVN_GUID" }).version
 $svn_cdboot_latest = [version]($svn_json.svns | Where-Object { $_.guid -eq "{$EFI_CDBOOT_DBXSVN_GUID} == EFI_CDBOOT_DBXSVN_GUID" }).version
 $svn_wdsmgfw_latest = [version]($svn_json.svns | Where-Object { $_.guid -eq "{$EFI_WDSMGR_DBXSVN_GUID} == EFI_WDSMGR_DBXSVN_GUID" }).version
-
-$dbx_list = $dbx_raw | Get-UEFIDatabaseSignatures
-$dbx_size = $dbx_raw.Bytes.Length
-$dbx_hashes = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_SHA256_GUID' } | ForEach-Object { $_.SignatureList.SignatureData }).Count
-$dbx_certs = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_X509_GUID' } | ForEach-Object { $_.SignatureList.SignatureData }).Count
-$dbx_svns = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_SHA256_GUID' } | ForEach-Object { $_.SignatureList | Where-Object { $_.SignatureOwner -eq [guid]$SVN_OWNER_GUID } } | ForEach-Object { $_.SignatureData }).Count
-$dbx_hashes -= $dbx_svns
 
 $components = [ordered]@{
     BootMgr = @{ Name="Windows BootMgr SVN"; JSON=$svn_bootmgr_latest }
