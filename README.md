@@ -31,7 +31,7 @@ Right-click `Check UEFI PK, KEK, DB and DBX.cmd` and *Run as administrator*.
 
 Example output:
 
-<img width="979" height="785" alt="Screenshot" src="https://github.com/user-attachments/assets/d3a4d8e2-ec25-49fc-bf61-fcba883ecfc3" />
+<img width="979" height="1040" alt="Screenshot" src="https://github.com/user-attachments/assets/f7a621d5-72b6-4e22-8f6d-9d30e3c09ae5" />
 
 ## Audit ESP or an attached drive for revoked EFI binaries (DBX)
 

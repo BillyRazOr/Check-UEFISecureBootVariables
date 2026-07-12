@@ -391,4 +391,32 @@ foreach ($key in $components.Keys) {
     Write-Host $text -ForegroundColor $color
 }
 
-Write-Host ("Statistics".PadRight($colWidth) + " : $dbx_size Bytes, $dbx_hashes SHA256 hashes, $dbx_certs X.509 certs, $dbx_svns SVNs")
+Write-Host ("Statistics".PadRight($colWidth) + " : $dbx_hashes SHA256 hashes, $dbx_certs X.509 certs, $dbx_svns SVNs")
+
+Write-Host ""
+Write-Host $bold'Size statistics (Bytes)'$reset
+
+$variables = @("PK", "KEK", "db", "dbx", "SetupMode", "SecureBoot", "dbt")
+$variables_default = @("PKDefault", "KEKDefault", "dbDefault", "dbxDefault", "dbtDefault")
+$vars_size = 0
+$default_vars_size = 0
+foreach ($var in $variables) {
+    try {
+        $var_size = $(Get-SecureBootUEFI $var).Bytes.Length
+        $vars_size += $var_size
+        Write-Host "$($var.PadRight($colWidth)) : $var_size"
+    } catch {
+        Write-Host "$($var.PadRight($colWidth)) : 0 or unable to determine"
+    }
+}
+Write-Host "$('Total size'.PadRight($colWidth)) : $vars_size"
+foreach ($var in $variables_default) {
+    try {
+        $var_size = $(Get-SecureBootUEFI $var).Bytes.Length
+        $default_vars_size += $var_size
+        Write-Host "$($var.PadRight($colWidth)) : $var_size"
+    } catch {
+        Write-Host "$($var.PadRight($colWidth)) : 0 or unable to determine"
+    }
+}
+Write-Host "$('Total default size'.PadRight($colWidth)) : $default_vars_size"
