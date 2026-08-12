@@ -336,13 +336,17 @@ if ($arch -eq "amd64") {
   # Show-CheckDBX "2025-06-11 (v1.5.1)" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2025-06-11.bin"
   # Show-CheckDBX "2025-10-14 (v1.6.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2025-10-14.bin"
     Show-CheckDBX "2026-06-09 (v1.6.5) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2026-06-09.bin"
+    Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_x64_2026-07-14.efiauth2"
 } elseif ($arch -eq "arm64") {
     Show-CheckDBX "2025-02-25 (v1.4.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\arm64_DBXUpdate_2025-02-25.bin"
+    Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_aarch64_2026-07-14.efiauth2"
 } elseif ($arch -eq "x86") {
   # Show-CheckDBX "2025-10-14 (v1.6.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x86_DBXUpdate_2025-10-14.bin"
     Show-CheckDBX "2026-04-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x86_DBXUpdate_2026-04-14.bin"
+    Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_ia32_2026-07-14.efiauth2"
 } elseif ($arch -eq "arm") {
     Show-CheckDBX "2025-02-25 (v1.4.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\arm_DBXUpdate_2025-02-25.bin"
+    Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_arm_2026-07-14.efiauth2"
 } else {
     Write-Warning "[$($arch.ToUpper())] architecture."
 }
