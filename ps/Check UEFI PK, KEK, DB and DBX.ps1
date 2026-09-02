@@ -140,7 +140,9 @@ function Show-UEFICertIsPresent {
         [Parameter(Mandatory)]
         [string]$CertName,
         [Parameter()]
-        [PSCustomObject]$DBX
+        [PSCustomObject]$DBX,
+        [Parameter()]
+        [bool]$CheckRevoked = $true
     )
     $found = $false
     foreach ($SignatureList in $UEFISignatureDatabase) {
@@ -152,11 +154,14 @@ function Show-UEFICertIsPresent {
             }
         }
     }
-    $revoked = Is-CertThumbprintRevoked -CertThumbprint $CertThumbprint -DBX $DBX
+    if ($CheckRevoked) {
+        $revoked = Is-CertThumbprintRevoked -CertThumbprint $CertThumbprint -DBX $DBX
+        $revoked_string = "(revoked: $revoked)"
+    }
     if ($found) {
-        Write-Host "$check $CertName (revoked: $revoked)"
+        Write-Host "$check $CertName $revoked_string"
     } else {
-        Write-Host "$cross $CertName (revoked: $revoked)"
+        Write-Host "$cross $CertName $revoked_string"
     }
 }
 
@@ -167,21 +172,28 @@ function Show-UEFICertOthers {
         [Parameter(Mandatory)]
         [Array]$KnownCerts,
         [Parameter()]
-        [PSCustomObject]$DBX
+        [PSCustomObject]$DBX,
+        [Parameter()]
+        [bool]$ShowHashes = $true,
+        [Parameter()]
+        [bool]$CheckRevoked = $true
     )
     $cert_names = [ordered]@{}
     foreach ($SignatureList in $UEFISignatureDatabase) {
         if ($SignatureList.SignatureType -eq 'EFI_CERT_X509_GUID') {
             foreach ($Signature in $SignatureList.SignatureList) {
-                $revoked = Is-CertThumbprintRevoked -CertThumbprint $Signature.SignatureData.Thumbprint -DBX $DBX
+                if ($CheckRevoked) {
+                    $revoked = Is-CertThumbprintRevoked -CertThumbprint $Signature.SignatureData.Thumbprint -DBX $DBX
+                    $revoked_string = "(revoked: $revoked)"
+                }
                 $common_name = [regex]::Match($Signature.SignatureData.Subject, 'CN=([^,]+)').Groups[1].Value
                 if ([string]::IsNullOrWhiteSpace($common_name)) {
                     $common_name = $Signature.SignatureData.Thumbprint # Show Thumbprint if cert has no CN
                 }
-                $cert_names[$Signature.SignatureData.Thumbprint] = $common_name + " (revoked: $revoked)"
+                $cert_names[$Signature.SignatureData.Thumbprint] = $common_name + " $revoked_string"
             }
         }
-        elseif ($SignatureList.SignatureType -eq 'EFI_CERT_SHA256_GUID') {
+        elseif ($SignatureList.SignatureType -eq 'EFI_CERT_SHA256_GUID' -and $ShowHashes) {
             foreach ($Signature in $SignatureList.SignatureList) {
                 $cert_names[$Signature.SignatureData] = "SHA256: $($Signature.SignatureData)"
                 # Note: Hashes are not checked for revocations at the moment
@@ -287,28 +299,13 @@ $dbx_certs = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_X509_GU
 $dbx_svns = @($dbx_list | Where-Object { $_.SignatureType -eq 'EFI_CERT_SHA256_GUID' } | ForEach-Object { $_.SignatureList | Where-Object { $_.SignatureOwner -eq [guid]$SVN_OWNER_GUID } } | ForEach-Object { $_.SignatureData }).Count
 $dbx_hashes -= $dbx_svns
 
-function Show-UEFICerts {
-    param (
-        [Parameter(Mandatory)]
-        [PSCustomObject]$UEFISignatureDatabase
-    )
-    $cert_names = [ordered]@{}
-    foreach ($SignatureList in $UEFISignatureDatabase) {
-        if ($SignatureList.SignatureType -eq 'EFI_CERT_X509_GUID') {
-            foreach ($Signature in $SignatureList.SignatureList) {
-                $common_name = [regex]::Match($Signature.SignatureData.Subject, 'CN=([^,]+)').Groups[1].Value
-                if ([string]::IsNullOrWhiteSpace($common_name)) {
-                    $common_name = $Signature.SignatureData.Thumbprint # Show Thumbprint if cert has no CN
-                }
-                $cert_names[$Signature.SignatureData.Thumbprint] = $common_name
-            }
-        }
-    }
-    foreach ($Key in $cert_names.Keys) {
-        Write-Host "$check $($cert_names[$Key])"
-    }
+$DBXCerts = [ordered]@{
+    '580A6F4CC4E4B669B9EBDC1B2B3E087B80D0678D' = 'Microsoft Windows Production PCA 2011'
 }
-Show-UEFICerts -UEFISignatureDatabase $dbx_list
+foreach ($Cert in $DBXCerts.GetEnumerator()) {
+    Show-UEFICertIsPresent -UEFISignatureDatabase $dbx_list -CertThumbprint $Cert.Key -CertName $Cert.Value -DBX $dbx_list -CheckRevoked $false
+}
+Show-UEFICertOthers -UEFISignatureDatabase $dbx_list -KnownCerts $DBXCerts -DBX $dbx_list -ShowHashes $false -CheckRevoked $false
 
 $colWidth = 27
 function Show-CheckDBX {
@@ -335,17 +332,17 @@ if ($arch -eq "amd64") {
   # Show-CheckDBX "2025-01-14 (v1.3.1)" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2025-01-14.bin"
   # Show-CheckDBX "2025-06-11 (v1.5.1)" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2025-06-11.bin"
   # Show-CheckDBX "2025-10-14 (v1.6.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2025-10-14.bin"
-    Show-CheckDBX "2026-06-09 (v1.6.5) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2026-06-09.bin"
+  # Show-CheckDBX "2026-06-09 (v1.6.5) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x64_DBXUpdate_2026-06-09.bin"
     Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_x64_2026-07-14.efiauth2"
 } elseif ($arch -eq "arm64") {
-    Show-CheckDBX "2025-02-25 (v1.4.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\arm64_DBXUpdate_2025-02-25.bin"
+  # Show-CheckDBX "2025-02-25 (v1.4.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\arm64_DBXUpdate_2025-02-25.bin"
     Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_aarch64_2026-07-14.efiauth2"
 } elseif ($arch -eq "x86") {
   # Show-CheckDBX "2025-10-14 (v1.6.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x86_DBXUpdate_2025-10-14.bin"
-    Show-CheckDBX "2026-04-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x86_DBXUpdate_2026-04-14.bin"
+  # Show-CheckDBX "2026-04-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\x86_DBXUpdate_2026-04-14.bin"
     Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_ia32_2026-07-14.efiauth2"
 } elseif ($arch -eq "arm") {
-    Show-CheckDBX "2025-02-25 (v1.4.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\arm_DBXUpdate_2025-02-25.bin"
+  # Show-CheckDBX "2025-02-25 (v1.4.0) [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\arm_DBXUpdate_2025-02-25.bin"
     Show-CheckDBX "2026-07-14 [$($arch.ToUpper())]" "$PSScriptRoot\..\dbx_bin\dbx_arm_2026-07-14.efiauth2"
 } else {
     Write-Warning "[$($arch.ToUpper())] architecture."
