@@ -88,7 +88,7 @@ $cross =  "$([char]0x1b)[91mX$reset"
 
 Import-Module -Force "$PSScriptRoot\Get-UEFIDatabaseSignatures.psm1"
 
-Write-Host $fgGreen$bgWhite======$reset $fgGreen$bold'Current UEFI PK'$reset $fgGreen$bgWhite======$reset
+Write-Host $fgGreen$bold$bgWhite'Current UEFI PK'$reset
 try {
     $pk = Get-SecureBootUEFI -Name pk | Get-UEFIDatabaseSignatures
     $pk.SignatureList.SignatureData.Subject | ForEach-Object {
@@ -100,7 +100,7 @@ try {
 }
 
 Write-Host ""
-Write-Host $fgYellow$bgWhite======$reset $fgYellow$bold'Default UEFI PK'$reset $fgYellow$bgWhite======$reset
+Write-Host $fgYellow$bold$bgWhite'Default UEFI PK'$reset
 if ($IsArm) {
     Write-Warning "Some ARM-based Windows devices can't retrieve default UEFI variables."
 }
@@ -242,7 +242,7 @@ $KEKCerts = [ordered]@{
 }
 
 Write-Host ""
-Write-Host $fgGreen$bgWhite======$reset $fgGreen$bold'Current UEFI KEK'$reset $fgGreen$bgWhite======$reset
+Write-Host $fgGreen$bold$bgWhite'Current UEFI KEK'$reset
 try {
     $kek = Get-SecureBootUEFI kek -ErrorAction Stop | Get-UEFIDatabaseSignatures -ErrorAction Stop
     foreach ($Cert in $KEKCerts.GetEnumerator()) {
@@ -254,7 +254,7 @@ try {
 }
 
 Write-Host ""
-Write-Host $fgYellow$bgWhite======$reset $fgYellow$bold'Default UEFI KEK'$reset $fgYellow$bgWhite======$reset
+Write-Host $fgYellow$bold$bgWhite'Default UEFI KEK'$reset
 if ($IsArm) {
     Write-Warning "Some ARM-based Windows devices can't retrieve default UEFI variables."
 }
@@ -277,7 +277,7 @@ $DBCerts = [ordered]@{
 }
 
 Write-Host ""
-Write-Host $fgGreen$bgWhite======$reset $fgGreen$bold'Current UEFI DB'$reset $fgGreen$bgWhite======$reset
+Write-Host $fgGreen$bold$bgWhite'Current UEFI DB'$reset
 try {
     $db = Get-SecureBootUEFI db -ErrorAction Stop | Get-UEFIDatabaseSignatures -ErrorAction Stop
     foreach ($Cert in $DBCerts.GetEnumerator()) {
@@ -289,7 +289,7 @@ try {
 }
 
 Write-Host ""
-Write-Host $fgYellow$bgWhite======$reset $fgYellow$bold'Default UEFI DB'$reset $fgYellow$bgWhite======$reset
+Write-Host $fgYellow$bold$bgWhite'Default UEFI DB'$reset
 if ($IsArm) {
     Write-Warning "Some ARM-based Windows devices can't retrieve default UEFI variables."
 }
@@ -304,7 +304,7 @@ try {
 }
 
 Write-Host ""
-Write-Host $fgBrRed$bgBlue======$reset $fgBrRed$bold'Current UEFI DBX'$reset $fgBrRed$bgBlue======$reset
+Write-Host $fgBrRed$bold$bgBlue'Current UEFI DBX'$reset
 
 try {
     $dbx_raw = Get-SecureBootUEFI dbx -ErrorAction Stop
