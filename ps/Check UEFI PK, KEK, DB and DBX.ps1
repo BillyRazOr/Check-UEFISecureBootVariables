@@ -179,7 +179,7 @@ function Show-UEFICertIsPresent {
     }
     if ($CheckRevoked) {
         $revoked = Is-CertThumbprintRevoked -CertThumbprint $CertThumbprint -DBX $DBX
-        $revoked_string = "(revoked: $revoked)"
+        $revoked_string = "(Revoked: $revoked)"
     }
     if ($found) {
         Write-Host "$check $CertName $revoked_string"
@@ -207,7 +207,7 @@ function Show-UEFICertOthers {
             foreach ($Signature in $SignatureList.SignatureList) {
                 if ($CheckRevoked) {
                     $revoked = Is-CertThumbprintRevoked -CertThumbprint $Signature.SignatureData.Thumbprint -DBX $DBX
-                    $revoked_string = "(revoked: $revoked)"
+                    $revoked_string = "(Revoked: $revoked)"
                 }
                 $common_name = [regex]::Match($Signature.SignatureData.Subject, 'CN=([^,]+)').Groups[1].Value
                 if ([string]::IsNullOrWhiteSpace($common_name)) {
